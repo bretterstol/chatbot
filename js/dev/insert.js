@@ -106,6 +106,8 @@ function insertText(list, connection) {
                 case 3:
                     if (!(_a < words_1.length)) return [3 /*break*/, 9];
                     word = words_1[_a];
+                    if (word === " ")
+                        return [3 /*break*/, 8];
                     wordQuery = new query_class_1.QueryDuplicate("words", "word", [word], "word_count");
                     return [4 /*yield*/, wordQuery.insert(connection)];
                 case 4:
