@@ -43,6 +43,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var mysql = __importStar(require("mysql"));
+var query_class_1 = require("./query.class");
 var config = {
     host: 'localhost',
     user: 'retterstol',
@@ -83,103 +84,67 @@ function makeWordList(text) {
 }
 function insertWords(list, connection) {
     return __awaiter(this, void 0, void 0, function () {
-        var _loop_1, _i, list_1, sentence, error_2;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
+        var _i, list_1, sentence, fixedSentence, sentenceQuery, sentence_id, words, _loop_1, _a, words_1, word, error_2;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
                 case 0:
-                    _a.trys.push([0, 5, , 6]);
-                    _loop_1 = function (sentence) {
-                        var fixedSentence, sentence_id, words, _loop_2, _i, words_1, word;
+                    _b.trys.push([0, 8, , 9]);
+                    _i = 0, list_1 = list;
+                    _b.label = 1;
+                case 1:
+                    if (!(_i < list_1.length)) return [3 /*break*/, 7];
+                    sentence = list_1[_i];
+                    fixedSentence = sentence.replace(/[\u0800-\uFFFF]/g, '').trim();
+                    sentenceQuery = new query_class_1.Query("sentences", "sentence", [fixedSentence]);
+                    return [4 /*yield*/, sentenceQuery.insert(connection)];
+                case 2:
+                    sentence_id = _b.sent();
+                    console.log(sentence_id);
+                    words = fixedSentence.split(" ");
+                    _loop_1 = function (word) {
+                        var word_id, wordSentenceQuery, word_sentence_id;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
-                                case 0:
-                                    fixedSentence = sentence.replace(/[\u0800-\uFFFF]/g, '');
-                                    return [4 /*yield*/, new Promise(function (resolve, reject) {
-                                            connection.query("insert into sentences(sentence) values(?)", [fixedSentence], function (error, result) {
-                                                if (error)
-                                                    reject(error);
-                                                else
-                                                    resolve(result.insertId);
-                                            });
-                                        })];
-                                case 1:
-                                    sentence_id = _a.sent();
-                                    words = fixedSentence.split(" ");
-                                    _loop_2 = function (word) {
-                                        var word_id, word_sentence_id;
-                                        return __generator(this, function (_a) {
-                                            switch (_a.label) {
-                                                case 0: return [4 /*yield*/, new Promise(function (resolve, reject) {
-                                                        connection.query("insert into words(word) values(?) on duplicate key update word_count = 1 + word_count", [word], function (error, result) {
-                                                            if (error)
-                                                                reject(error);
-                                                            else {
-                                                                resolve(result.insertId);
-                                                            }
-                                                        });
-                                                    })];
-                                                case 1:
-                                                    word_id = _a.sent();
-                                                    return [4 /*yield*/, new Promise(function (resolve, reject) {
-                                                            connection.query("insert into word_sentence(word_id, sentence_id) values(?, ?)", [word_id, sentence_id], function (error, result) {
-                                                                if (error) {
-                                                                    reject(error);
-                                                                }
-                                                                else {
-                                                                    resolve(result.insertId);
-                                                                }
-                                                            });
-                                                        })];
-                                                case 2:
-                                                    word_sentence_id = _a.sent();
-                                                    return [2 /*return*/];
+                                case 0: return [4 /*yield*/, new Promise(function (resolve, reject) {
+                                        connection.query("insert into words(word) values(?) on duplicate key update word_count = 1 + word_count", [word], function (error, result) {
+                                            if (error)
+                                                reject(error);
+                                            else {
+                                                resolve(result.insertId);
                                             }
                                         });
-                                    };
-                                    _i = 0, words_1 = words;
-                                    _a.label = 2;
+                                    })];
+                                case 1:
+                                    word_id = _a.sent();
+                                    wordSentenceQuery = new query_class_1.Query("word_sentence", ["word_id", "sentence_id"], [word_id, sentence_id]);
+                                    return [4 /*yield*/, wordSentenceQuery.insert(connection)];
                                 case 2:
-                                    if (!(_i < words_1.length)) return [3 /*break*/, 5];
-                                    word = words_1[_i];
-                                    return [5 /*yield**/, _loop_2(word)];
-                                case 3:
-                                    _a.sent();
-                                    _a.label = 4;
-                                case 4:
-                                    _i++;
-                                    return [3 /*break*/, 2];
-                                case 5: return [2 /*return*/];
+                                    word_sentence_id = _a.sent();
+                                    return [2 /*return*/];
                             }
                         });
                     };
-                    _i = 0, list_1 = list;
-                    _a.label = 1;
-                case 1:
-                    if (!(_i < list_1.length)) return [3 /*break*/, 4];
-                    sentence = list_1[_i];
-                    return [5 /*yield**/, _loop_1(sentence)];
-                case 2:
-                    _a.sent();
-                    _a.label = 3;
+                    _a = 0, words_1 = words;
+                    _b.label = 3;
                 case 3:
+                    if (!(_a < words_1.length)) return [3 /*break*/, 6];
+                    word = words_1[_a];
+                    return [5 /*yield**/, _loop_1(word)];
+                case 4:
+                    _b.sent();
+                    _b.label = 5;
+                case 5:
+                    _a++;
+                    return [3 /*break*/, 3];
+                case 6:
                     _i++;
                     return [3 /*break*/, 1];
-                case 4: return [2 /*return*/, true];
-                case 5:
-                    error_2 = _a.sent();
+                case 7: return [2 /*return*/, true];
+                case 8:
+                    error_2 = _b.sent();
                     return [2 /*return*/, false];
-                case 6: return [2 /*return*/];
+                case 9: return [2 /*return*/];
             }
-        });
-    });
-}
-function insertInto(query, connection) {
-    return new Promise(function (resolve, reject) {
-        connection.query("insert into ??(?) values(?)", [query.table, query.columns, query.values], function (error, result) {
-            if (error)
-                reject(error);
-            else
-                resolve(result.insertId);
         });
     });
 }

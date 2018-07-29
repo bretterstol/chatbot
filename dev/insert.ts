@@ -1,5 +1,5 @@
 import * as mysql from 'mysql';
-import {Query} from './dev.interfaces';
+import {Query, QueryDuplicate} from './query.class';
 
 const config = {
     host:'localhost',
@@ -14,7 +14,7 @@ async function insert(text:string):Promise<boolean> {
     connection.connect();
     try {
         const sentences = makeWordList(text);
-        const result = await insertWords(sentences, connection);
+        const result = await insertText(sentences, connection);
         return result;
     } catch (error) {
         return false;
@@ -29,33 +29,18 @@ function makeWordList(text:string):string[]{
     
     return cleanString.split(/\./g)
 }
-async function insertWords(list:string[], connection:mysql.Connection):Promise<boolean>{
+async function insertText(list:string[], connection:mysql.Connection):Promise<boolean>{
     try{
         for (let sentence of list){
-            let fixedSentence = sentence.replace(/[\u0800-\uFFFF]/g, '');
-            const sentence_id = await new Promise((resolve, reject) => {
-                connection.query("insert into sentences(sentence) values(?)", [fixedSentence], (error, result) => {
-                    if(error) reject(error);
-                    else resolve(result.insertId);
-                })});
+            let fixedSentence = sentence.replace(/[\u0800-\uFFFF]/g, '').trim();
+            let sentenceQuery = new Query("sentences", "sentence", [fixedSentence]);
+            let sentence_id = await sentenceQuery.insert(connection);
             let words = fixedSentence.split(" ");
-            for(let word of words){                
-                let word_id = await new Promise((resolve, reject) => {
-                    connection.query("insert into words(word) values(?) on duplicate key update word_count = 1 + word_count", [word], (error, result) => {
-                    if(error) reject(error);
-                    else{
-                     resolve(result.insertId);
-                    }
-                })});
-                const word_sentence_id = await new Promise((resolve, reject) => {
-                    connection.query("insert into word_sentence(word_id, sentence_id) values(?, ?)", [word_id, sentence_id], (error, result) => {
-                    if(error){
-                         reject(error);
-                    }
-                    else {
-                        resolve(result.insertId);
-                    }
-                })});
+            for(let word of words){
+                let wordQuery = new QueryDuplicate("words", "word", [word], "word_count");                
+                let word_id = await wordQuery.insert(connection);
+                let wordSentenceQuery = new Query("word_sentence", ["word_id", "sentence_id"], [word_id, sentence_id]);
+                let word_sentence_id = await wordSentenceQuery.insert(connection);
             }
         }
         return true;
@@ -64,13 +49,5 @@ async function insertWords(list:string[], connection:mysql.Connection):Promise<b
     }
 }
 
-
-function insertInto(query:Query, connection:mysql.Connection):Promise<number>{
-    return new Promise((resolve, reject) => {
-        connection.query("insert into ??(?) values(?)", [query.table, query.columns ,query.values], (error, result) => {
-            if(error)reject(error);
-           else resolve(result.insertId);
-       })});
-}
 
 export default insert;

@@ -12,9 +12,9 @@ export interface Query{
     duplicate_inc?: string
 }
 
-export interface stringifyQuery{
+export interface stringifiedQuery{
     table: string,
-    columns: string,
+    columns: string|string[],
     values: string,
     duplicate?: string,
     duplicate_inc?: string 
