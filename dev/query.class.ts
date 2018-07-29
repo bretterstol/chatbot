@@ -1,4 +1,3 @@
-import { stringifiedQuery } from './dev.interfaces';
 import * as mysql from 'mysql';
 
 export class Query {
@@ -6,17 +5,19 @@ export class Query {
     columns: string[] | string;
     values: any[] | any;
     query: string;
+    duplicate?: boolean;
+    row_increment?: string;
 
     constructor(table: string, columns: string[] | string, values: any[] | any) {
         this.table = table;
         this.columns = columns;
         this.values = values;
-        this.query = "insert into ??(??) values(?)";
+        this.query = this.createQuery();
     }
 
-    public insert(connection: mysql.Connection): Promise<number> {
+    insert(connection: mysql.Connection): Promise<number> {
         return new Promise((resolve, reject) => {
-            connection.query(this.query, [this.table, this.columns, this.values], (error, result) => {
+            connection.query(this.query, this.getVariables(), (error, result) => {
                 if (error) {
                     console.error(error);
                     reject(error);
@@ -24,6 +25,12 @@ export class Query {
                 else resolve(result.insertId);
             })
         });
+    }
+    createQuery() {
+            return "insert into ??(??) values(?)"
+    }
+    getVariables(): any[] {
+        return [this.table, this.columns, this.values];
     }
 }
 
@@ -36,11 +43,16 @@ export class QueryDuplicate extends Query {
         this.query = this.createQuery(row_increment);
     }
 
-    private createQuery(increment?: string): string {
+    createQuery(increment?: string): string {
         if (increment) {
-            return "insert into words(word) values(?) on duplicate key update ${increment} = 1 + ${increment}";
+            return "insert into ??(??) values(?) on duplicate key update ?? = 1 + ??";
         } else {
-            return "insert into words(word) values(?) on duplicate key update";
+            return "insert into ??(??) values(?) on duplicate key update";
         }
     }
+    getVariables(): any[] {
+        if(this.row_increment) return [this.table, this.columns, this.values, this.row_increment, this.row_increment];
+        else return super.getVariables();
+    }
+
 }

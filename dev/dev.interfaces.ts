@@ -4,12 +4,10 @@ export interface book{
     release_date: Date
 }
 
-export interface Query{
+export interface IQuery{
     table: string,
     columns: string[],
     values: any[],
-    duplicate?: boolean,
-    duplicate_inc?: string
 }
 
 export interface stringifiedQuery{
