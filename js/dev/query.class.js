@@ -11,7 +11,8 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var Query = /** @class */ (function () {
-    function Query(table, columns, values) {
+    function Query(_a) {
+        var table = _a.table, columns = _a.columns, values = _a.values;
         this.table = table;
         this.columns = columns;
         this.values = values;
@@ -41,8 +42,9 @@ var Query = /** @class */ (function () {
 exports.Query = Query;
 var QueryDuplicate = /** @class */ (function (_super) {
     __extends(QueryDuplicate, _super);
-    function QueryDuplicate(table, columns, values, row_increment) {
-        var _this = _super.call(this, table, columns, values) || this;
+    function QueryDuplicate(_a) {
+        var table = _a.table, columns = _a.columns, values = _a.values, row_increment = _a.row_increment;
+        var _this = _super.call(this, { table: table, columns: columns, values: values }) || this;
         _this.row_increment = row_increment;
         _this.query = _this.createQuery(row_increment);
         return _this;

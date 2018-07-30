@@ -24,14 +24,13 @@ async function insert(text: string): Promise<boolean> {
 }
 
 function makeWordList(text: string): string[] {
-    //console.log(book);
     const cleanString = text.replace(/\n|\r|\t/g, " ");
 
     return cleanString.split(/\./g)
 }
 async function insertText(list: string[], connection: mysql.Connection): Promise<boolean> {
     try {
-        const insertWordSentence = async (word_id: number, sentence_id: number) => {
+        const insertWordSentence = async (word_id: number, sentence_id: number):Promise<number> => {
             let wordSentenceQuery = new Query({
                 table: "word_sentence", 
                 columns: ["word_id", "sentence_id"],
@@ -39,7 +38,7 @@ async function insertText(list: string[], connection: mysql.Connection): Promise
             });
             return await wordSentenceQuery.insert(connection);
         }
-        const insertWordNext = async (first_word_id: number, second_word_id: number) => {
+        const insertWordNext = async (first_word_id: number, second_word_id: number):Promise<number> => {
             let nextWordQuery = new QueryDuplicate({
                 table: "next_words", 
                 columns: ["first_word_id", "second_word_id"], 
@@ -49,9 +48,9 @@ async function insertText(list: string[], connection: mysql.Connection): Promise
             return await nextWordQuery.insert(connection);
         }
 
-        const insertWord = (sentence_id:number) => {
-            let combination:number[] = [];            
-            return async (word: string) => {
+        const insertWord = async (sentence_id:number, words:string[]):Promise<void> => {
+            let combination: number[] = [];
+            for(let word of words){
                 let wordQuery = new QueryDuplicate({
                     table: "words", 
                     columns: "word", 
@@ -65,7 +64,7 @@ async function insertText(list: string[], connection: mysql.Connection): Promise
                     await insertWordNext(first_word_id, second_word_id);
                     combination = [];
                 }
-                return await insertWordSentence(word_id, sentence_id);
+                await insertWordSentence(word_id, sentence_id);
             }
         } 
 
@@ -78,7 +77,7 @@ async function insertText(list: string[], connection: mysql.Connection): Promise
             });
             let sentence_id = await sentenceQuery.insert(connection);
             let words = fixedSentence.split(" ");
-            return await Promise.all(words.map(insertWord(sentence_id)));
+            return await insertWord(sentence_id, words);
         }
         await Promise.all(list.map(insertSentence));
         return true;
