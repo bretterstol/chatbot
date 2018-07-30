@@ -31,26 +31,56 @@ function makeWordList(text: string): string[] {
 }
 async function insertText(list: string[], connection: mysql.Connection): Promise<boolean> {
     try {
-        for (let sentence of list) {
-            let fixedSentence = sentence.replace(/[\u0800-\uFFFF]/g, '').trim();
-            let sentenceQuery = new Query("sentences", "sentence", [fixedSentence]);
-            let sentence_id = await sentenceQuery.insert(connection);
-            let words = fixedSentence.split(" ");
-            let combination: number[] = [];
-            for (let word of words) {
-                let wordQuery = new QueryDuplicate("words", "word", [word], "word_count");
-                let word_id = await wordQuery.insert(connection);
+        const insertWordSentence = async (word_id: number, sentence_id: number) => {
+            let wordSentenceQuery = new Query({
+                table: "word_sentence", 
+                columns: ["word_id", "sentence_id"],
+                values: [word_id, sentence_id]
+            });
+            return await wordSentenceQuery.insert(connection);
+        }
+        const insertWordNext = async (first_word_id: number, second_word_id: number) => {
+            let nextWordQuery = new QueryDuplicate({
+                table: "next_words", 
+                columns: ["first_word_id", "second_word_id"], 
+                values: [first_word_id, second_word_id], 
+                row_increment: "combination_count"
+            });
+            return await nextWordQuery.insert(connection);
+        }
+
+        const insertWord = (sentence_id:number) => {
+            let combination:number[] = [];            
+            return async (word: string) => {
+                let wordQuery = new QueryDuplicate({
+                    table: "words", 
+                    columns: "word", 
+                    values: [word], 
+                    row_increment: "word_count"
+                });
+                const word_id = await wordQuery.insert(connection);
                 combination.push(word_id);
-                if (combination.length === 2) {
-                    let nextWordQuery = new QueryDuplicate("next_words", ["first_word_id", "second_word_id"], combination, "combination_count");
-                    let next_word_id = await nextWordQuery.insert(connection);
+                if(combination.length === 2){
+                    const [first_word_id, second_word_id] = combination;
+                    await insertWordNext(first_word_id, second_word_id);
                     combination = [];
                 }
-
-                let wordSentenceQuery = new Query("word_sentence", ["word_id", "sentence_id"], [word_id, sentence_id]);
-                let word_sentence_id = await wordSentenceQuery.insert(connection);
+                return await insertWordSentence(word_id, sentence_id);
             }
+        } 
+
+        const insertSentence = async (sentence: string) => {
+            let fixedSentence = sentence.replace(/[\u0800-\uFFFF]/g, '').trim();
+            let sentenceQuery = new Query({
+                table: "sentences", 
+                columns: "sentence", 
+                values: [fixedSentence]
+            });
+            let sentence_id = await sentenceQuery.insert(connection);
+            let words = fixedSentence.split(" ");
+            return await Promise.all(words.map(insertWord(sentence_id)));
         }
+        await Promise.all(list.map(insertSentence));
         return true;
     } catch (error) {
         return false;

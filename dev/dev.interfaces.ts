@@ -6,14 +6,10 @@ export interface book{
 
 export interface IQuery{
     table: string,
-    columns: string[],
-    values: any[],
+    columns: string[] | string,
+    values: any[] | any,
 }
 
-export interface stringifiedQuery{
-    table: string,
-    columns: string|string[],
-    values: string,
-    duplicate?: string,
-    duplicate_inc?: string 
+export interface IQueryDuplecate extends IQuery{
+    row_increment?:string
 }

@@ -1,14 +1,12 @@
 import * as mysql from 'mysql';
-
+import {IQuery, IQueryDuplecate} from './dev.interfaces';
 export class Query {
     table: string;
     columns: string[] | string;
     values: any[] | any;
     query: string;
-    duplicate?: boolean;
-    row_increment?: string;
 
-    constructor(table: string, columns: string[] | string, values: any[] | any) {
+    constructor({table, columns, values}:IQuery) {
         this.table = table;
         this.columns = columns;
         this.values = values;
@@ -37,8 +35,8 @@ export class Query {
 export class QueryDuplicate extends Query {
     row_increment?: string;
 
-    constructor(table: string, columns: string[] | string, values: any[] | any, row_increment?: string) {
-        super(table, columns, values);
+    constructor({table, columns, values, row_increment}:IQueryDuplecate) {
+        super({table, columns, values});
         this.row_increment = row_increment;
         this.query = this.createQuery(row_increment);
     }

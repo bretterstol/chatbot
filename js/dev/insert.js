@@ -84,59 +84,83 @@ function makeWordList(text) {
 }
 function insertText(list, connection) {
     return __awaiter(this, void 0, void 0, function () {
-        var _i, list_1, sentence, fixedSentence, sentenceQuery, sentence_id, words, combination, _a, words_1, word, wordQuery, word_id, nextWordQuery, next_word_id, wordSentenceQuery, word_sentence_id, error_2;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
+        var insertWordSentence_1, insertWordNext_1, insertWord_1, insertSentence, error_2;
+        var _this = this;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
                 case 0:
-                    _b.trys.push([0, 11, , 12]);
-                    _i = 0, list_1 = list;
-                    _b.label = 1;
+                    _a.trys.push([0, 2, , 3]);
+                    insertWordSentence_1 = function (word_id, sentence_id) { return __awaiter(_this, void 0, void 0, function () {
+                        var wordSentenceQuery;
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0:
+                                    wordSentenceQuery = new query_class_1.Query("word_sentence", ["word_id", "sentence_id"], [word_id, sentence_id]);
+                                    return [4 /*yield*/, wordSentenceQuery.insert(connection)];
+                                case 1: return [2 /*return*/, _a.sent()];
+                            }
+                        });
+                    }); };
+                    insertWordNext_1 = function (first_word_id, second_word_id) { return __awaiter(_this, void 0, void 0, function () {
+                        var nextWordQuery;
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0:
+                                    nextWordQuery = new query_class_1.QueryDuplicate("next_words", ["first_word_id", "second_word_id"], [first_word_id, second_word_id], "combination_count");
+                                    return [4 /*yield*/, nextWordQuery.insert(connection)];
+                                case 1: return [2 /*return*/, _a.sent()];
+                            }
+                        });
+                    }); };
+                    insertWord_1 = function (sentence_id) {
+                        var combination = [];
+                        return function (word) { return __awaiter(_this, void 0, void 0, function () {
+                            var wordQuery, word_id, first_word_id, second_word_id;
+                            return __generator(this, function (_a) {
+                                switch (_a.label) {
+                                    case 0:
+                                        wordQuery = new query_class_1.QueryDuplicate("words", "word", [word], "word_count");
+                                        return [4 /*yield*/, wordQuery.insert(connection)];
+                                    case 1:
+                                        word_id = _a.sent();
+                                        combination.push(word_id);
+                                        if (!(combination.length === 2)) return [3 /*break*/, 3];
+                                        first_word_id = combination[0], second_word_id = combination[1];
+                                        return [4 /*yield*/, insertWordNext_1(first_word_id, second_word_id)];
+                                    case 2:
+                                        _a.sent();
+                                        combination = [];
+                                        _a.label = 3;
+                                    case 3: return [4 /*yield*/, insertWordSentence_1(word_id, sentence_id)];
+                                    case 4: return [2 /*return*/, _a.sent()];
+                                }
+                            });
+                        }); };
+                    };
+                    insertSentence = function (sentence) { return __awaiter(_this, void 0, void 0, function () {
+                        var fixedSentence, sentenceQuery, sentence_id, words;
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0:
+                                    fixedSentence = sentence.replace(/[\u0800-\uFFFF]/g, '').trim();
+                                    sentenceQuery = new query_class_1.Query("sentences", "sentence", [fixedSentence]);
+                                    return [4 /*yield*/, sentenceQuery.insert(connection)];
+                                case 1:
+                                    sentence_id = _a.sent();
+                                    words = fixedSentence.split(" ");
+                                    return [4 /*yield*/, Promise.all(words.map(insertWord_1(sentence_id)))];
+                                case 2: return [2 /*return*/, _a.sent()];
+                            }
+                        });
+                    }); };
+                    return [4 /*yield*/, Promise.all(list.map(insertSentence))];
                 case 1:
-                    if (!(_i < list_1.length)) return [3 /*break*/, 10];
-                    sentence = list_1[_i];
-                    fixedSentence = sentence.replace(/[\u0800-\uFFFF]/g, '').trim();
-                    sentenceQuery = new query_class_1.Query("sentences", "sentence", [fixedSentence]);
-                    return [4 /*yield*/, sentenceQuery.insert(connection)];
+                    _a.sent();
+                    return [2 /*return*/, true];
                 case 2:
-                    sentence_id = _b.sent();
-                    words = fixedSentence.split(" ");
-                    combination = [];
-                    _a = 0, words_1 = words;
-                    _b.label = 3;
-                case 3:
-                    if (!(_a < words_1.length)) return [3 /*break*/, 9];
-                    word = words_1[_a];
-                    if (word === " ")
-                        return [3 /*break*/, 8];
-                    wordQuery = new query_class_1.QueryDuplicate("words", "word", [word], "word_count");
-                    return [4 /*yield*/, wordQuery.insert(connection)];
-                case 4:
-                    word_id = _b.sent();
-                    combination.push(word_id);
-                    if (!(combination.length === 2)) return [3 /*break*/, 6];
-                    nextWordQuery = new query_class_1.QueryDuplicate("next_words", ["first_word_id", "second_word_id"], combination, "combination_count");
-                    return [4 /*yield*/, nextWordQuery.insert(connection)];
-                case 5:
-                    next_word_id = _b.sent();
-                    combination = [];
-                    _b.label = 6;
-                case 6:
-                    wordSentenceQuery = new query_class_1.Query("word_sentence", ["word_id", "sentence_id"], [word_id, sentence_id]);
-                    return [4 /*yield*/, wordSentenceQuery.insert(connection)];
-                case 7:
-                    word_sentence_id = _b.sent();
-                    _b.label = 8;
-                case 8:
-                    _a++;
-                    return [3 /*break*/, 3];
-                case 9:
-                    _i++;
-                    return [3 /*break*/, 1];
-                case 10: return [2 /*return*/, true];
-                case 11:
-                    error_2 = _b.sent();
+                    error_2 = _a.sent();
                     return [2 /*return*/, false];
-                case 12: return [2 /*return*/];
+                case 3: return [2 /*return*/];
             }
         });
     });
