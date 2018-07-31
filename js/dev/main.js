@@ -41,14 +41,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var getFiles_1 = __importDefault(require("./getFiles"));
 var insert_1 = __importDefault(require("./insert"));
 var readFromFile_1 = __importDefault(require("./readFromFile"));
+var moment_1 = __importDefault(require("moment"));
 var text = "http://www.gutenberg.org/cache/epub/30027/pg30027.txt";
 function main() {
     return __awaiter(this, void 0, void 0, function () {
-        var name, textFile, result, error_1;
+        var before, name, textFile, result, after, error_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 3, , 4]);
+                    before = moment_1.default();
                     return [4 /*yield*/, getFiles_1.default(text, './sult.txt')];
                 case 1:
                     name = _a.sent();
@@ -56,6 +58,8 @@ function main() {
                     return [4 /*yield*/, insert_1.default(textFile)];
                 case 2:
                     result = _a.sent();
+                    after = moment_1.default();
+                    console.log(after.diff(before));
                     return [3 /*break*/, 4];
                 case 3:
                     error_1 = _a.sent();
